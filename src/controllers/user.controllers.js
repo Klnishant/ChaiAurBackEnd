@@ -4,8 +4,23 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
 
-
+const generateAccessAndRefreshToken = async (userId) =>{
+    try {
+        const user = User.findById(userId);
+        const accessToken=user.generateAccessToken();
+        const refreshToken=user.generateRefreshToken();
+    
+        user.refreshToken=refreshToken;
+    
+        await user.save({validateBeforeSave:false});
+    
+        return {accessToken,refreshToken}
+    } catch (error) {
+        throw new apiError(500,"something went wrong while generating access and refresh token");
+    }
+}
 const registerUser = asyncHandler( async(req,res)=>{
     // get user details from frontend
     // validation - not empty
@@ -75,4 +90,59 @@ const registerUser = asyncHandler( async(req,res)=>{
 
 });
 
-export { registerUser }
+const logedInUser = asyncHandler( async (req,res) =>{
+    // req body -> data
+    // username or email
+    //find the user
+    //password check
+    //access and referesh token
+    //send cookie
+
+    const {userName,email,password} = req.body;
+
+    if (!(userName || email)) {
+        throw new apiError(401,"userName or email are required");
+    }
+
+    const user = User.findOne({
+        $or:[{userName},{email}]
+    });
+
+    if (!user) {
+        throw new apiError(404,"Invalid userName or email");
+    }
+
+    const isPasswordValid = user.isPasswordCorrect(password);
+
+    if(!isPasswordValid){
+        throw new apiError(404,"Invalid credential");
+    }
+
+    const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id);
+
+    const logedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+    const options={
+        httpOnly:true,
+        secure:true,
+    }
+
+    return res.status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new apiResponse(
+            200,
+            {
+                user:logedInUser,accessToken,refreshToken
+            },
+            "User logedIn successsfully",
+        )
+    )
+
+})
+
+export {
+    registerUser,
+    logedInUser,
+}
