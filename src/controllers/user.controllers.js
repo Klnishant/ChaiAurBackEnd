@@ -98,51 +98,81 @@ const logedInUser = asyncHandler( async (req,res) =>{
     //access and referesh token
     //send cookie
 
-    const {userName,email,password} = req.body;
-
-    if (!(userName || email)) {
-        throw new apiError(401,"userName or email are required");
+    try {
+        const {userName,email,password} = req.body;
+    
+        if (!(userName || email)) {
+            throw new apiError(401,"userName or email are required");
+        }
+    
+        const user = User.findOne({
+            $or:[{userName},{email}]
+        });
+    
+        if (!user) {
+            throw new apiError(404,"Invalid userName or email");
+        }
+    
+        const isPasswordValid = user.isPasswordCorrect(password);
+    
+        if(!isPasswordValid){
+            throw new apiError(404,"Invalid credential");
+        }
+    
+        const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id);
+    
+        const logedInUser = await User.findById(user._id).select("-password -refreshToken");
+    
+        const options={
+            httpOnly:true,
+            secure:true,
+        }
+    
+        return res.status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",refreshToken,options)
+        .json(
+            new apiResponse(
+                200,
+                {
+                    user:logedInUser,accessToken,refreshToken
+                },
+                "User logedIn successsfully",
+            )
+        )
+    } catch (error) {
+        throw new apiError(404,"error occured while loged in");
     }
 
-    const user = User.findOne({
-        $or:[{userName},{email}]
-    });
+})
 
-    if (!user) {
-        throw new apiError(404,"Invalid userName or email");
+const logOutUser = asyncHandler(async (req,res) =>{
+    await User.findByIdAndUpdate(req.user._id,{
+        $unset:{
+            refreshToken:1,
+        },
+        
+    },
+    {
+        new:true,
     }
+    )
 
-    const isPasswordValid = user.isPasswordCorrect(password);
-
-    if(!isPasswordValid){
-        throw new apiError(404,"Invalid credential");
-    }
-
-    const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id);
-
-    const logedInUser = await User.findById(user._id).select("-password -refreshToken");
-
-    const options={
+    const options = {
         httpOnly:true,
         secure:true,
     }
 
     return res.status(200)
-    .cookie("accessToken",accessToken,options)
-    .cookie("refreshToken",refreshToken,options)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
     .json(
-        new apiResponse(
-            200,
-            {
-                user:logedInUser,accessToken,refreshToken
-            },
-            "User logedIn successsfully",
-        )
+        new apiResponse(200,{},"User loggedOut successfully")
     )
-
 })
 
 export {
     registerUser,
     logedInUser,
+    logOutUser,
 }
