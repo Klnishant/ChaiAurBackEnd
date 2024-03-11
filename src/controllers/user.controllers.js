@@ -208,6 +208,31 @@ const refreshAccessToken = asyncHandler(async (req,res) =>{
     } catch (error) {
         throw new apiError(error?.message || "accessToken expired");
     }
+});
+
+const changeCurrentPassword = asyncHandler(async (req,res) =>{
+    try {
+        const {oldPassword,newPassword} = req.body;
+
+        const user = await User.findById(req.user?._id);
+        const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+        if(!isPasswordCorrect){
+            throw new apiError(401,"Invalid old password");
+        }
+
+        user.password = newPassword;
+
+        await user.save({validateBeforeSave:false});
+
+        return res.status(200)
+        .json(
+            200,{},"Password changed successfully"
+        )
+
+    } catch (error) {
+        throw new apiError(400,"Invalid credential");
+    }
 })
 
 export {
@@ -215,4 +240,5 @@ export {
     logedInUser,
     logOutUser,
     refreshAccessToken,
+    changeCurrentPassword,
 }
