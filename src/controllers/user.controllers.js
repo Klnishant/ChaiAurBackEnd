@@ -233,7 +233,39 @@ const changeCurrentPassword = asyncHandler(async (req,res) =>{
     } catch (error) {
         throw new apiError(400,"Invalid credential");
     }
-})
+});
+
+const getCurrentUser = asyncHandler( async (req,res) =>{
+    return res.
+    status(200).
+    json(
+        new apiResponse(200,req.user,"user fetched successfully")
+    )
+});
+
+const updateAccountDetails = asyncHandler( async (req,res) =>{
+    const {fullName,email} = req.body;
+
+    if(!(fullName || email)){
+        throw new apiError(400,"fullName or email are required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                fullName,
+                email:email,
+            }
+        }
+    ).select("-password")
+
+    return res.
+    status(200).
+    json( new apiResponse(200,user,"account updated successfully"));
+});
+
+
 
 export {
     registerUser,
@@ -241,4 +273,7 @@ export {
     logOutUser,
     refreshAccessToken,
     changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+
 }
