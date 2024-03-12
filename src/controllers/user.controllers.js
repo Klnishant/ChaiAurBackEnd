@@ -257,6 +257,9 @@ const updateAccountDetails = asyncHandler( async (req,res) =>{
                 fullName,
                 email:email,
             }
+        },
+        {
+            new:true,
         }
     ).select("-password")
 
@@ -265,7 +268,31 @@ const updateAccountDetails = asyncHandler( async (req,res) =>{
     json( new apiResponse(200,user,"account updated successfully"));
 });
 
+const updateAvtar = asyncHandler( async (req,res) =>{
+    const avtarLocalPath = req.file?.path;
 
+    if (!avtarLocalPath) {
+        throw new apiError(400,"avtar local file missing");
+    }
+
+    const avtar = await uploadOnCloudinary(avtarLocalPath);
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                avtar:avtar.url
+            }
+        },
+        {
+            new:true,
+        }
+    ).select("-password -email");
+
+    return res.
+    status(200).
+    json( new apiResponse(200,user,"avtar updated successfully"));
+});
 
 export {
     registerUser,
@@ -275,5 +302,6 @@ export {
     changeCurrentPassword,
     getCurrentUser,
     updateAccountDetails,
+    updateAvtar,
 
 }
