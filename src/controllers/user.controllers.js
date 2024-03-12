@@ -277,6 +277,10 @@ const updateAvtar = asyncHandler( async (req,res) =>{
 
     const avtar = await uploadOnCloudinary(avtarLocalPath);
 
+    if (!avtar) {
+        throw new apiError(400,"avtar not uploaded on cloudinary");
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -294,6 +298,36 @@ const updateAvtar = asyncHandler( async (req,res) =>{
     json( new apiResponse(200,user,"avtar updated successfully"));
 });
 
+const updateCoverImage = asyncHandler( async (req,res) =>{
+    const coverImageLocalPath = req.file?.path;
+
+    if (!coverImageLocalPath) {
+        throw new apiError(400,"cover image missing");
+    }
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+    
+    if (!coverImage) {
+        throw new apiError(400,"cover image not uploaded on cloudinary");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                coverImage:coverImage.url,
+            }
+        },
+        {
+            new:true,
+        }
+    ).select("-password -email");
+
+    return res
+    .status(200)
+    .json( new apiResponse(200,user,"cover image updated successfully"));
+})
+
 export {
     registerUser,
     logedInUser,
@@ -303,5 +337,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateAvtar,
+    updateCoverImage,
 
 }
