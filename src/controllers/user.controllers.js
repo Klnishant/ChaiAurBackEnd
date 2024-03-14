@@ -47,11 +47,13 @@ const registerUser = asyncHandler( async(req,res)=>{
         throw new apiError(409,"userName and email already existed");
     }
 
-    const avtarLocalPath = req.files?.avtar[0]?.path;
-    console.log(avtarLocalPath);
+    console.log(req.files?.avtar[0]?.path);
 
-    if (!avtarLocalPath) {
-        throw new apiError(409,"avtar is required");
+    const avatarLocalPath = req.files?.avtar[0]?.path;
+    console.log(avatarLocalPath);
+
+    if (!avatarLocalPath) {
+        throw new apiError(409,"avtar file is missing");
     }
 
     let coverImageLocalPath;
@@ -60,7 +62,7 @@ const registerUser = asyncHandler( async(req,res)=>{
         coverImageLocalPath = req.files.coverImage[0].path;
     }
 
-    const avtar = await uploadOnCloudinary(avtarLocalPath);
+    const avtar = await uploadOnCloudinary(avatarLocalPath);
     const coverImage= await uploadOnCloudinary(coverImageLocalPath);
 
     if (!avtar) {
@@ -84,7 +86,7 @@ const registerUser = asyncHandler( async(req,res)=>{
         throw new apiError(500,"something went wrong while registering the users");
     }
 
-    return res.send(201).json(
+    return res.status(201).json(
         new apiResponse(200,createdUser,"user created successfully")
     );
 
