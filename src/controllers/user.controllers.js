@@ -8,9 +8,13 @@ import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshToken = async (userId) =>{
     try {
-        const user = User.findById(userId);
+        console.log(userId);
+        const user = await User.findById(userId);
+        console.log(user);
         const accessToken=user.generateAccessToken();
         const refreshToken=user.generateRefreshToken();
+
+        console.log(accessToken);
     
         user.refreshToken=refreshToken;
     
@@ -72,7 +76,7 @@ const registerUser = asyncHandler( async(req,res)=>{
     const user = await User.create({
         fullName,
         avtar:avtar.url,
-        coverImage:coverImage.url,
+        coverImage:coverImage?.url,
         email,
         password,
         userName:userName.toLowerCase(),
@@ -102,26 +106,36 @@ const logedInUser = asyncHandler( async (req,res) =>{
 
     try {
         const {userName,email,password} = req.body;
+
+        
     
-        if (!(userName || email)) {
+        if (!userName && !email) {
             throw new apiError(401,"userName or email are required");
         }
+
+        console.log(email);
     
         const user = await User.findOne({
             $or:[{userName},{email}]
         });
+
+        console.log(user);
     
         if (!user) {
             throw new apiError(404,"Invalid userName or email");
         }
     
-        const isPasswordValid = user.isPasswordCorrect(password);
+        const isPasswordValid = await user.isPasswordCorrect(password);
+
+        console.log(isPasswordValid);
     
         if(!isPasswordValid){
             throw new apiError(404,"Invalid credential");
         }
     
         const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id);
+
+        console.log(accessToken);
     
         const logedInUser = await User.findById(user._id).select("-password -refreshToken");
     

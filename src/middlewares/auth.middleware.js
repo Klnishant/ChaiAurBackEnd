@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 
 const verifyJWT = asyncHandler(async (req,_,next) =>{
     try {
-        const token = req.cookies?.accessToken || req.headers("Authorization")?.replace("Bearer ","");
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","");
         if (!token) {
             throw new apiError(400,"Token not find");
         }
