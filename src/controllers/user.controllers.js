@@ -5,6 +5,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
+import { subscription } from "../models/subscription.model.js";
 
 const generateAccessAndRefreshToken = async (userId) =>{
     try {
@@ -342,7 +343,73 @@ const updateCoverImage = asyncHandler( async (req,res) =>{
     return res
     .status(200)
     .json( new apiResponse(200,user,"cover image updated successfully"));
-})
+});
+
+const getChannelProfile = asyncHandler( async(req,res) =>{
+    const {userName} = req.params;
+
+    if (!userName) {
+        throw new apiError(400,"user not found");
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match:{
+                username:userName?.toLowerCase(),
+            }
+        },
+        {
+            $lookup:{
+                from:"subscription",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers",
+            }
+        },
+        {
+            $lookup:{
+                from:"subscription",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribedTo"
+            }
+        },
+        {
+            $addFields:{
+                subscriberCount:{
+                    $size: "$subscribers",
+                },
+                channelSubscribedToCount:{
+                    $size:"$subscribedTo",
+                },
+                isSubscribed:{
+                    $cond:{
+                        if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                        then:true,
+                        else:false,
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                fullName:1,
+                userName:1,
+                subscriberCount:1,
+                channelSubscribedToCount1,
+                isSubscribed:1,
+                avtar:1,
+                coverImage:1,
+                email:1,
+            }
+        }
+    ]);
+
+    return res.status(200)
+    .json(
+        new apiResponse(200,channel,"Channel fetched successfully")
+    );
+});
 
 export {
     registerUser,
@@ -354,5 +421,6 @@ export {
     updateAccountDetails,
     updateAvtar,
     updateCoverImage,
+    getChannelProfile,
 
 }
