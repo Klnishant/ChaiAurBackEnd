@@ -6,6 +6,9 @@ dotenv.config({
     path:"./.env"
 })
 
+console.log(`${process.env.CLOUDINARY_CLOUD_NAME}`);
+console.log(process.env.CLOUDINARY_API_KEY);
+
 connectDb()
 .then( ()=> {
     app.listen(process.env.PORT || 8000, ()=>{
