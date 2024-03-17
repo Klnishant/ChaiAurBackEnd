@@ -360,7 +360,7 @@ const getChannelProfile = asyncHandler( async(req,res) =>{
         },
         {
             $lookup:{
-                from:"subscription",
+                from:"subscriptions",
                 localField:"_id",
                 foreignField:"channel",
                 as:"subscribers",
@@ -368,7 +368,7 @@ const getChannelProfile = asyncHandler( async(req,res) =>{
         },
         {
             $lookup:{
-                from:"subscription",
+                from:"subscriptions",
                 localField:"_id",
                 foreignField:"subscriber",
                 as:"subscribedTo"
@@ -405,11 +405,66 @@ const getChannelProfile = asyncHandler( async(req,res) =>{
         }
     ]);
 
+    if (!channel?.length) {
+        throw new apiError(400,"channel does not exist");
+    }
+
     return res.status(200)
     .json(
         new apiResponse(200,channel,"Channel fetched successfully")
     );
 });
+
+const getWatchHistory = asyncHandler( async (req,res) =>{
+    
+    const user = await User.aggregate([
+        {
+            $match:{
+                _id:new mongoose.Types.ObjectId((req.user?._id)),
+            },
+        },
+        {
+            $lookup:{
+                from:"videos",
+                localField:"watchHistory",
+                foreignField:"_id",
+                as:"watchHistory",
+                pipeline:[
+                    {
+                        from:"users",
+                        localField:"owner",
+                        foreignField:"_id",
+                        as:"owner",
+                        pipeline:[
+                            {
+                                $project:{
+                                    fullName:1,
+                                    userName:1,
+                                    avtar:1,
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        $addFields:{
+                            owner:{
+                                $first:"$owner",
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]);
+    return res.status(200)
+    .json(
+        new apiResponse(
+            200,
+            user[0].watchHistory,
+            "Watch history fetched successfully",
+        )
+    )
+})
 
 export {
     registerUser,
@@ -422,5 +477,5 @@ export {
     updateAvtar,
     updateCoverImage,
     getChannelProfile,
-
+    getWatchHistory,
 }
