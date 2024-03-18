@@ -5,7 +5,6 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
-import { subscription } from "../models/subscription.model.js";
 
 const generateAccessAndRefreshToken = async (userId) =>{
     try {
@@ -355,7 +354,7 @@ const getChannelProfile = asyncHandler( async(req,res) =>{
     const channel = await User.aggregate([
         {
             $match:{
-                username:userName?.toLowerCase(),
+                userName:userName?.toLowerCase(),
             }
         },
         {
@@ -396,7 +395,7 @@ const getChannelProfile = asyncHandler( async(req,res) =>{
                 fullName:1,
                 userName:1,
                 subscriberCount:1,
-                channelSubscribedToCount1,
+                channelSubscribedToCount:1,
                 isSubscribed:1,
                 avtar:1,
                 coverImage:1,
@@ -419,36 +418,38 @@ const getWatchHistory = asyncHandler( async (req,res) =>{
     
     const user = await User.aggregate([
         {
-            $match:{
-                _id:new mongoose.Types.ObjectId((req.user?._id)),
-            },
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
         },
         {
-            $lookup:{
-                from:"videos",
-                localField:"watchHistory",
-                foreignField:"_id",
-                as:"watchHistory",
-                pipeline:[
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
                     {
-                        from:"users",
-                        localField:"owner",
-                        foreignField:"_id",
-                        as:"owner",
-                        pipeline:[
-                            {
-                                $project:{
-                                    fullName:1,
-                                    userName:1,
-                                    avtar:1,
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     },
                     {
                         $addFields:{
                             owner:{
-                                $first:"$owner",
+                                $first: "$owner"
                             }
                         }
                     }
@@ -456,6 +457,8 @@ const getWatchHistory = asyncHandler( async (req,res) =>{
             }
         }
     ]);
+
+    console.log(user);
     return res.status(200)
     .json(
         new apiResponse(
