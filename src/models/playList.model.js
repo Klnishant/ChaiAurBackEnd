@@ -5,7 +5,6 @@ const playListSchema = new Schema(
         name:{
             type:String,
             required:true,
-            trim:true,
         },
         description:{
             type:String,
