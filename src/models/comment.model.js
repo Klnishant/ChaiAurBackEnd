@@ -1,13 +1,8 @@
 import mongoose, {Schema} from "mongoose";
 
-const playListSchema = new Schema(
+const commentSchema = new Schema(
     {
-        name:{
-            type:String,
-            required:true,
-            trim:true,
-        },
-        description:{
+        content:{
             type:String,
             required:true,
             trim:true,
@@ -19,11 +14,11 @@ const playListSchema = new Schema(
         owner:{
             type:Schema.Types.ObjectId,
             ref:"User",
-        },
+        }
     },
     {
         timestamps:true,
     }
 );
 
-export const PlayList = mongoose.model("PlayList",playListSchema);
+export const comments = mongoose.model("comments",commentSchema);
