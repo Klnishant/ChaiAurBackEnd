@@ -116,8 +116,50 @@ const getVideoById = asyncHandler( async (req,res)=> {
     );
 });
 
+const updateVideo = asyncHandler( async (req,res)=> {
+    const {videoId} = req.params;
+
+    
+    if (!videoId) {
+        throw new apiError(400,"video id not find");
+    }
+
+    const {title,description} = req.body;
+    console.log(title);
+
+    const thumbnailPath = req.file?.path;
+    console.log(thumbnailPath);
+    const thumbnail = await uploadOnCloudinary(thumbnailPath);
+
+    console.log(thumbnail);
+
+    const videos = await video.findByIdAndUpdate(
+        videoId,
+        {
+            $set:{
+                title:title,
+                description:description,
+                thumbnail:thumbnail.url,
+            }
+        },
+        {
+            new:true,
+        }
+    );
+
+    if (!videos) {
+        throw new apiError(500,"video not updated!!");
+    }
+
+    return res.status(200)
+    .json(
+        new apiResponse(200,videos,"video updated successfully")
+    );
+});
+
 export {
     getAllVideos,
     publishAVideo,
     getVideoById,
+    updateVideo,
 }
