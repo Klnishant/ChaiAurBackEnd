@@ -157,9 +157,48 @@ const updateVideo = asyncHandler( async (req,res)=> {
     );
 });
 
+const deleteVideo = asyncHandler( async (req,res)=> {
+    const {videoId} = req.params;
+
+    if (!videoId) {
+        throw new apiError(400,"videoId not found");
+    }
+
+    await video.deleteOne({ _id: new mongoose.Types.ObjectId(videoId)});
+
+    return res.status(200).json(new apiResponse(200,{},"video deleted successfully"));
+});
+
+const togglePublishStatus = asyncHandler( async (req,res)=> {
+    const {videoId} = req.params;
+
+    if (!videoId) {
+        throw new apiError(400,"vodeo id not found");
+    }
+
+    
+    await video.updateOne(
+        {
+            _id: new mongoose.Types.ObjectId(videoId)
+        },
+        {
+            $set:{
+                isPublished:!"$isPublished",
+            }
+        },
+        {
+            new:true,
+        }
+    );
+
+    return res.status(200).json(new apiResponse(200,{},"toggle publish status succesfully"));
+});
+
 export {
     getAllVideos,
     publishAVideo,
     getVideoById,
     updateVideo,
+    deleteVideo,
+    togglePublishStatus,
 }
