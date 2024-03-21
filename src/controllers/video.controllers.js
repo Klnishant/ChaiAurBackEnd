@@ -177,21 +177,30 @@ const togglePublishStatus = asyncHandler( async (req,res)=> {
     }
 
     
-    await video.updateOne(
+    const videos = await video.findByIdAndUpdate(
         {
             _id: new mongoose.Types.ObjectId(videoId)
         },
-        {
-            $set:{
-                isPublished:!"$isPublished",
+        [
+            {
+              $set: {
+                isPublished: {
+                  $switch: {
+                    branches: [
+                      { case: { $eq: ["$isPublished", true] }, then: false }, // If isPublished is true, set it to false
+                      { case: { $eq: ["$isPublished", false] }, then: true } // If isPublished is false, set it to true
+                    ],
+                    default: "$isPublished" // If neither true nor false, keep the current value
+                  }
+                }
+              }
             }
-        },
-        {
-            new:true,
-        }
+        ]
     );
 
-    return res.status(200).json(new apiResponse(200,{},"toggle publish status succesfully"));
+    console.log(videos.isPublished);
+
+    return res.status(200).json(new apiResponse(200,videos,"toggle publish status succesfully"));
 });
 
 export {
