@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -100,8 +100,8 @@ const publishAVideo = asyncHandler( async (req,res)=> {
 const getVideoById = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
-    if (!videoId) {
-        throw new apiError(400,"video id not found");
+    if (!isValidObjectId(videoId)) {
+        throw new apiError(400,"video id not valid");
     }
 
     const videos = await video.findById(videoId).select("-isPublished")
@@ -120,8 +120,8 @@ const updateVideo = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
     
-    if (!videoId) {
-        throw new apiError(400,"video id not find");
+    if (!isValidObjectId(videoId)) {
+        throw new apiError(400,"video id not valid");
     }
 
     const {title,description} = req.body;
@@ -160,8 +160,8 @@ const updateVideo = asyncHandler( async (req,res)=> {
 const deleteVideo = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
-    if (!videoId) {
-        throw new apiError(400,"videoId not found");
+    if (!isValidObjectId(videoId)) {
+        throw new apiError(400,"video id not valid");
     }
 
     await video.deleteOne({ _id: new mongoose.Types.ObjectId(videoId)});
@@ -172,8 +172,8 @@ const deleteVideo = asyncHandler( async (req,res)=> {
 const togglePublishStatus = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
-    if (!videoId) {
-        throw new apiError(400,"vodeo id not found");
+    if (!isValidObjectId(videoId)) {
+        throw new apiError(400,"video id not valid");
     }
 
     
