@@ -2,11 +2,10 @@ import mongoose, { isValidObjectId } from "mongoose";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { User } from "../models/user.model.js";
 import { video } from "../models/video.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import _ from "lodash";
 
 const getAllVideos = asyncHandler( async (req,res)=> {
     const {page=1, limit=10, query, sortBy, sortType, userId} = req.query;
@@ -106,9 +105,6 @@ const publishAVideo = asyncHandler( async (req,res)=> {
 const getVideoById = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
-    const {accessToken,refreshToken} = req.cookies;
-    const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
-
     if (!isValidObjectId(videoId)) {
         throw new apiError(400,"video id not valid");
     }
@@ -171,9 +167,18 @@ const getVideoById = asyncHandler( async (req,res)=> {
 const updateVideo = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
+    const {accessToken,refreshToken} = req.cookies;
+    const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
+
+    const userId = decodedToken?._id;
+    console.log(userId);
     
-    if (!isValidObjectId(videoId)) {
-        throw new apiError(400,"video id not valid");
+    const validUser = await video.findById(videoId);
+    const validUserId=validUser.owner;
+    console.log(validUserId.toString());
+
+    if (!(isValidObjectId(videoId) && (_.isEqual(validUser.owner.toString(),userId)))) {
+        throw new apiError(400,"video id and user not valid");
     }
 
     const {title,description} = req.body;
@@ -191,7 +196,7 @@ const updateVideo = asyncHandler( async (req,res)=> {
             $set:{
                 title:title,
                 description:description,
-                thumbnail:thumbnail.url,
+                thumbnail:thumbnail?.url,
             }
         },
         {
@@ -212,8 +217,18 @@ const updateVideo = asyncHandler( async (req,res)=> {
 const deleteVideo = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
-    if (!isValidObjectId(videoId)) {
-        throw new apiError(400,"video id not valid");
+    const {accessToken,refreshToken} = req.cookies;
+    const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
+
+    const userId = decodedToken?._id;
+    console.log(userId);
+    
+    const validUser = await video.findById(videoId);
+    const validUserId=validUser.owner;
+    console.log(validUserId.toString());
+
+    if (!(isValidObjectId(videoId) && (_.isEqual(validUser.owner.toString(),userId)))) {
+        throw new apiError(400,"video id and user not valid");
     }
 
     await video.deleteOne({ _id: new mongoose.Types.ObjectId(videoId)});
@@ -224,8 +239,18 @@ const deleteVideo = asyncHandler( async (req,res)=> {
 const togglePublishStatus = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
-    if (!isValidObjectId(videoId)) {
-        throw new apiError(400,"video id not valid");
+    const {accessToken,refreshToken} = req.cookies;
+    const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
+
+    const userId = decodedToken?._id;
+    console.log(userId);
+    
+    const validUser = await video.findById(videoId);
+    const validUserId=validUser.owner;
+    console.log(validUserId.toString());
+
+    if (!(isValidObjectId(videoId) && (_.isEqual(validUser.owner.toString(),userId)))) {
+        throw new apiError(400,"video id and user not valid");
     }
 
     
