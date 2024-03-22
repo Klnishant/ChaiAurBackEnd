@@ -5,6 +5,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { video } from "../models/video.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const getAllVideos = asyncHandler( async (req,res)=> {
     const {page=1, limit=10, query, sortBy, sortType, userId} = req.query;
@@ -77,12 +79,16 @@ const publishAVideo = asyncHandler( async (req,res)=> {
         throw new apiError(500,"thumbnail is required");
     }
 
+    const {accessToken,refreshToken} = req.cookies;
+    const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
+
     const videos = await video.create({
         title,
         description,
         videoFile:videoFile.url,
         thumbnail:thumbnail.url,
         duration: videoFile.duration,
+        owner:decodedToken._id,
     });
 
     const createdVideo = await video.findById(videos?._id);
@@ -100,11 +106,57 @@ const publishAVideo = asyncHandler( async (req,res)=> {
 const getVideoById = asyncHandler( async (req,res)=> {
     const {videoId} = req.params;
 
+    const {accessToken,refreshToken} = req.cookies;
+    const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
+
     if (!isValidObjectId(videoId)) {
         throw new apiError(400,"video id not valid");
     }
 
-    const videos = await video.findById(videoId).select("-isPublished")
+    const videos = await video.aggregate(
+        [
+            {
+              $match: {
+                _id: new mongoose.Types.ObjectId(videoId)
+              }
+            },
+            {
+              $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline:[
+                  {
+                    $project:{
+                      userName:1,
+                      fullName:1,
+                      avtar:1,
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              $addFields: {
+                owner:{
+                  $arrayElemAt: ["$owner",0]
+                }
+              }
+            },
+            {
+                $project:{
+                    videoFile:1,
+                    thumbnail:1,
+                    title:1,
+                    description:1,
+                    duration:1,
+                    views:1,
+                    owner:1
+                }
+            }
+          ]
+    )
 
     if (!videos) {
         throw new apiError(400,"Video not found");
