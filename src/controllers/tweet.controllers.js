@@ -1,7 +1,7 @@
-import { asyncHandler } from "../utils/asyncHandler";
-import { apiError } from "../utils/apiError";
-import { apiResponse } from "../utils/apiResponse";
-import { Tweet } from "../models/tweet.model";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { apiError } from "../utils/apiError.js";
+import { apiResponse } from "../utils/apiResponse.js";
+import { Tweet } from "../models/tweet.model.js";
 import jwt from "jsonwebtoken";
 import mongoose, { isValidObjectId } from "mongoose";
 
@@ -59,7 +59,7 @@ const getUserTweets = asyncHandler( async (req,res)=> {
         {
             $addFields:{
                 owner:{
-                    $arrayElmAt:["$owner",0],
+                    $arrayElemAt:["$owner",0],
                 }
             }
         },
@@ -70,7 +70,9 @@ const getUserTweets = asyncHandler( async (req,res)=> {
             }
         },
         {
-            $sort:-1,
+            $sort:{
+                createdAt:-1,
+            },
         }
     ]);
 
