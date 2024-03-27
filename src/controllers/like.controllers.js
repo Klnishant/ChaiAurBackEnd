@@ -4,6 +4,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { video } from "../models/video.model.js";
 import { likes } from "../models/like.model.js";
+import jwt from "jsonwebtoken";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params
@@ -16,14 +17,14 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
     const userId = decodedToken?._id;
 
-    const like = await likes.find(
+    const like = await likes.findOne(
         {
-            $match:{
-                video:videoId,
-                likedBy:userId,
-            }
+            video:videoId,
+            likedBy:userId,
         }
     );
+
+    console.log(like);
 
     if (!like) {
         const videoLike = await likes.create(
@@ -53,12 +54,10 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
     const userId = decodedToken?._id;
 
-    const like = await likes.find(
+    const like = await likes.findOne(
         {
-            $match:{
-                comments:commentId,
-                likedBy:userId,
-            }
+            comments:commentId,
+            likedBy:userId,
         }
     );
 
@@ -91,19 +90,17 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
     const userId = decodedToken?._id;
 
-    const like = await likes.find(
+    const like = await likes.findOne(
         {
-            $match:{
-                tweet:tweetId,
-                likedBy:userId,
-            }
+            tweet:tweetId,
+            likedBy:userId,
         }
     );
 
     if (!like) {
         const tweetLike = await likes.create(
             {
-                comments:commentId,
+                tweet:tweetId,
                 likedBy:userId,
             }
         );
@@ -131,15 +128,15 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         },
         {
             $group:{
-                video:"$video"
+                _id:"$video"
             }
         },
         {
             $lookup:{
                 from:"videos",
-                localField:"video",
+                localField:"_id",
                 foreignField:"_id",
-                as:"video",
+                as:"videos",
                 pipeline:[
                     {
                         $lookup:{
@@ -164,24 +161,24 @@ const getLikedVideos = asyncHandler(async (req, res) => {
                                 $first:"$owner",
                             }
                         }
-                    }
+                    },
+                    {
+                        $project:{
+                            videoFile:1,
+                            thumbnail:1,
+                            owner:1,
+                        }
+                    },
                 ]
             }
         },
         {
-            $project:{
-                videoFile:1,
-                thumbnail:1,
-                owner:1,
-            }
-        },
-        {
             $addFields:{
-                video:{
-                    $first:"$video",
+                videos:{
+                    $first:"$videos",
                 }
             }
-        }
+        },
     ]);
 
     if (!likedVideos) {
