@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { video} from "../models/video.model.js";
 import { PlayList } from "../models/playList.model.js";
 import { User } from "../models/user.model.js"
+import jwt from "jsonwebtoken"
 
 const createPlayList = asyncHandler( async (req,res)=> {
     const {name,description} = req.body;
@@ -67,11 +68,6 @@ const getUserPlayLists = asyncHandler( async (req,res)=> {
             }
         },
         {
-            $group:{
-                owner:new mongoose.Types.ObjectId(userId),
-            }
-        },
-        {
             $project:{
                 _id:1,
                 name:1,
@@ -130,10 +126,12 @@ const addVideoToPlayList = asyncHandler( async (req,res)=> {
         throw new apiError(400,"Invalid credentials");
     }
 
-    const addedVideos = await PlayList.findByIdAndUpdate(
-        PlayListId,
+    const addedVideos = await PlayList.updateOne(
         {
-            $addToSet:{
+            _id:new mongoose.Types.ObjectId(PlayListId),
+        },
+        {
+            $push:{
                 videos:videoId,
             }
         },
@@ -146,14 +144,16 @@ const addVideoToPlayList = asyncHandler( async (req,res)=> {
         throw new apiError(500,"video not added");
     }
 
+    console.log(addedVideos);
+
     return res.status(200).json(new apiResponse(200,addedVideos,"video added successfully"));
 
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
-    const {playlistId, videoId} = req.params
+    const {playListId, videoId} = req.params
     
-    if (!(isValidObjectId(playlistId) && isValidObjectId(videoId))) {
+    if (!(isValidObjectId(playListId) && isValidObjectId(videoId))) {
         throw new apiError(400,"invalid playlist and video id");
     }
 
@@ -177,7 +177,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     }
 
     const playlist = await PlayList.findByIdAndUpdate(
-        playlistId,
+        playListId,
         {
             $pull:{
                 videos:videoId,
@@ -192,7 +192,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
         throw new apiError(400,"playList not found");
     }
 
-    return res.status(200).json(200,playlist,"video remove successfully");
+    return res.status(200).json(new apiResponse(200,playlist,"video remove successfully"));
 });
 
 const deletePlaylist = asyncHandler(async (req, res) => {
@@ -223,7 +223,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
     await PlayList.findByIdAndDelete(playlistId);
 
-    return res.status(200).json(200,{},"playList Deleted successfully");
+    return res.status(200).json(new apiResponse(200,{},"playList Deleted successfully"));
 });
 
 const updatePlaylist = asyncHandler(async (req, res) => {

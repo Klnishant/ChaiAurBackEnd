@@ -19,10 +19,12 @@ import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
+import playListRouter from "./routes/playList.routes.js"
 
 app.use("/user",userRouter);
 app.use("/videos",videoRouter);
 app.use("/tweet",tweetRouter);
 app.use("/subscribe",subscriptionRouter);
+app.use("/playList",playListRouter);
 
 export {app};
