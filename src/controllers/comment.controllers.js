@@ -29,11 +29,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
             }
         },
         {
-            $group:{
-                videos
-            }
-        },
-        {
             $lookup:{
                 from:"users",
                 localField:"owner",
@@ -62,7 +57,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
             }
         },
         {
-            $lookup:{
+            $project:{
                 content:1,
                 videos:1,
                 owner:1
@@ -122,7 +117,8 @@ const updateComment = asyncHandler(async (req, res) => {
 
     const comment = await comments.findByIdAndUpdate(
         {
-            commentId,userId,
+            _id:new mongoose.Types.ObjectId(commentId),
+            owner:new mongoose.Types.ObjectId(userId),
         },
         {
             $set:{
@@ -154,7 +150,12 @@ const deleteComment = asyncHandler(async (req, res) => {
     const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
     const userId = decodedToken?._id;
 
-    await comments.findByIdAndDelete({commentId,userId});
+    await comments.findByIdAndDelete(
+        {
+            _id:new mongoose.Types.ObjectId(commentId),
+            owner:new mongoose.Types.ObjectId(userId),
+        }
+    );
 
     return res.status(200).json(new apiResponse(200,{},"comment deleted successfully"));
 })
