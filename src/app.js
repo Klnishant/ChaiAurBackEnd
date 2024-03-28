@@ -15,6 +15,7 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 
+import healthCheckRouter from "./routes/healthCheck.routes.js";
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
@@ -23,6 +24,7 @@ import playListRouter from "./routes/playList.routes.js"
 import likeRouter from "./routes/like.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 
+app.use("/healthCheck",healthCheckRouter);
 app.use("/user",userRouter);
 app.use("/videos",videoRouter);
 app.use("/tweet",tweetRouter);
