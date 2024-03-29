@@ -1,7 +1,7 @@
 # VideoTube Backend
 
 ## Description
-VideoTube is a backend project built using JavaScript, Express.js, and MongoDB in the guidance of youtuber [Hitesh Choudhary](Chai Aur Code). It provides APIs for managing videos, user authentication, likes, subscriptions, comments, tweets, playlists, health checks, and dashboard functionalities.
+VideoTube is a backend project built using JavaScript, Express.js, and MongoDB in the guidance of youtuber [Hitesh Choudhary](https://www.youtube.com/@chaiaurcode). It provides APIs for managing videos, user authentication, likes, subscriptions, comments, tweets, playlists, health checks, and dashboard functionalities.
 
 ## Features
 - User authentication using JWT (JSON Web Tokens)
