@@ -5,14 +5,18 @@ import { apiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
 import { video } from "../models/video.model.js";
 import { comments } from "../models/comment.model.js";
-import { tweets } from "../models/tweet.model.js"
+import { Tweet } from "../models/tweet.model.js"
+import jwt from "jsonwebtoken";
 
 const getChannelStats = asyncHandler(async (req, res) => {
     // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
     const {accessToken,refreshToken} = req.cookies;
     const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECERET);
     const userId = decodedToken?._id;
-    console.log(req.user._id);
+    console.log(userId);
+    console.log(req.user?._id);
+
+    const obj ={};  
 
     const videosDetails = await User.aggregate([
         {
@@ -25,52 +29,36 @@ const getChannelStats = asyncHandler(async (req, res) => {
                 from:"videos",
                 localField:"_id",
                 foreignField:"owner",
-                as:"totalvideos",
-            }
-        },
-        {
-            $unwind:"$totalvideos",
-        },
-        {
-            $addFields:{
-                totalVideos:"$totalvideos",
-            }
-        },
-        {
-            $group:{
-                _id:null,
-                totalVideos:{
-                    $sum:1,
-                },
-                totalViews:{
-                    views:"$totalvideos.views",
-                },
+                as:"videos",
             }
         },
         {
             $lookup:{
-                from:"users",
+                from:"subscriptions",
                 localField:"_id",
-                foreignField:"_id",
-                as:"totalsubscribers"
+                foreignField:"channel",
+                as:"subscribers"
             }
         },
         {
             $addFields:{
-                totalsubscribers:{
-                    $first:"$totalsubscribers",
-                }
+                totalVideos:"$videos._id",
+                toatalSubscribers:"$subscribers.subscriber",
+                totalViews:"$videos.views"
             }
         },
         {
             $project:{
-                userName:1,
-                avtar:1,
-                totalvideos:1,
-                totalsubscribers:1,
-                views:1,
+                totalVideos:{
+                    $size:"$totalVideos"
+                },
+                toatalSubscribers:{
+                    $size:"$toatalSubscribers"
+                },
+                totalViews:1,
             }
-        }
+        },
+        
     ]);
 
     if (!videosDetails) {
@@ -86,32 +74,21 @@ const getChannelStats = asyncHandler(async (req, res) => {
         {
             $lookup:{
                 from:"likes",
-                localField:"owner",
+                localField:"_id",
                 foreignField:"video",
                 as:"totalvideolikes"
             }
         },
         {
-            $unwind:"$totalvideolikes",
-        },
-        {
-            $group:{
-                _id:"$video"
-            }
-        },
-        {
             $addFields:{
-                totalVideoLike:{
-                    totalVideoLike:{
-                        $sum:1,
-                    }
-                }
+                totalLikedVideos:"$totalvideolikes._id"
             }
         },
         {
             $project:{
-                _id:1,
-                totalVideoLike:1,
+                totalLikedVideos:{
+                    $size:"$totalLikedVideos"
+                },
             }
         }
     ]);
@@ -129,7 +106,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
         {
             $lookup:{
                 from:"likes",
-                localField:"owner",
+                localField:"_id",
                 foreignField:"comments",
                 as:"totalcommentslikes"
             }
@@ -139,21 +116,14 @@ const getChannelStats = asyncHandler(async (req, res) => {
         },
         {
             $group:{
-                _id:"$comments"
-            }
-        },
-        {
-            $addFields:{
+                _id:"$comments",
                 totalCommentLike:{
-                    totalCommentLike:{
-                        $sum:1,
-                    }
+                    $sum:1,
                 }
             }
         },
         {
             $project:{
-                _id:1,
                 totalCommentLike:1,
             }
         }
@@ -163,7 +133,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
         obj["totalCommentLike"]=0;
     }
 
-    const totalTweetLike = await tweets.aggregate([
+    const totalTweetLike = await Tweet.aggregate([
         {
             $match:{
                 owner:new mongoose.Types.ObjectId(userId),
@@ -172,25 +142,16 @@ const getChannelStats = asyncHandler(async (req, res) => {
         {
             $lookup:{
                 from:"likes",
-                localField:"owner",
+                localField:"_id",
                 foreignField:"twwet",
                 as:"totaltweetlikes"
             }
         },
         {
-            $unwind:"$totaltweetlikes",
-        },
-        {
             $group:{
-                _id:"$tweet"
-            }
-        },
-        {
-            $addFields:{
+                _id:"$tweet",
                 totalTweetLike:{
-                    totalTweetLike:{
-                        $sum:1,
-                    }
+                    $sum:1,
                 }
             }
         },

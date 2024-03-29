@@ -23,6 +23,7 @@ import subscriptionRouter from "./routes/subscription.routes.js";
 import playListRouter from "./routes/playList.routes.js"
 import likeRouter from "./routes/like.routes.js";
 import commentRouter from "./routes/comment.routes.js";
+import dashBoardRouter from "./routes/dashBoard.routes.js";
 
 app.use("/healthCheck",healthCheckRouter);
 app.use("/user",userRouter);
@@ -32,5 +33,6 @@ app.use("/subscribe",subscriptionRouter);
 app.use("/playList",playListRouter);
 app.use("/like",likeRouter);
 app.use("/comment",commentRouter);
+app.use("/dashboard",dashBoardRouter);
 
 export {app};
